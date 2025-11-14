@@ -5,17 +5,35 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import uk.ac.tees.mad.e4552051.pawpal.ui.screens.*
+
+import uk.ac.tees.mad.e4552051.pawpal.ui.screens.splash.SplashScreen
+import uk.ac.tees.mad.e4552051.pawpal.ui.screens.home.HomeScreen
+import uk.ac.tees.mad.e4552051.pawpal.ui.screens.addpet.AddPetScreen
+import uk.ac.tees.mad.e4552051.pawpal.ui.screens.reminders.ReminderScreen
+import uk.ac.tees.mad.e4552051.pawpal.ui.screens.settings.SettingsScreen
 
 @Composable
-fun PawPalNavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
-    NavHost(navController = navController, startDestination = NavRoutes.SPLASH, modifier = modifier) {
+fun PawPalNavGraph(
+    navController: NavHostController,
+    modifier: Modifier = Modifier
+) {
+
+    NavHost(
+        navController = navController,
+        startDestination = NavRoutes.SPLASH,
+        modifier = modifier
+    ) {
+
         composable(NavRoutes.SPLASH) {
-            SplashScreen(onNavigateToHome = { navController.navigate(NavRoutes.HOME) {
-                // clear splash from backstack
-                popUpTo(NavRoutes.SPLASH) { inclusive = true }
-            }})
+            SplashScreen(
+                onNavigateToHome = {
+                    navController.navigate(NavRoutes.HOME) {
+                        popUpTo(NavRoutes.SPLASH) { inclusive = true }
+                    }
+                }
+            )
         }
+
         composable(NavRoutes.HOME) {
             HomeScreen(
                 onNavigateToAddPet = { navController.navigate(NavRoutes.ADD_PET) },
@@ -23,12 +41,15 @@ fun PawPalNavGraph(navController: NavHostController, modifier: Modifier = Modifi
                 onNavigateToSettings = { navController.navigate(NavRoutes.SETTINGS) }
             )
         }
+
         composable(NavRoutes.ADD_PET) {
             AddPetScreen(onNavigateBack = { navController.navigateUp() })
         }
+
         composable(NavRoutes.REMINDERS) {
             ReminderScreen(onNavigateBack = { navController.navigateUp() })
         }
+
         composable(NavRoutes.SETTINGS) {
             SettingsScreen(onNavigateBack = { navController.navigateUp() })
         }
