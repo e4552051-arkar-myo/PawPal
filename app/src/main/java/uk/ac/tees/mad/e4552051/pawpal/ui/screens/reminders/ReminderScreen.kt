@@ -8,9 +8,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import uk.ac.tees.mad.e4552051.pawpal.ui.components.AppTopBar
+import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.ReminderViewModel
 
 @Composable
-fun ReminderScreen(onNavigateBack: () -> Unit) {
+fun ReminderScreen(
+    viewModel: ReminderViewModel,
+    onNavigateBack: () -> Unit,
+    onAddReminder: () -> Unit
+) {
 
     // Placeholder reminder list (Sprint 2 only)
     val reminders = listOf(

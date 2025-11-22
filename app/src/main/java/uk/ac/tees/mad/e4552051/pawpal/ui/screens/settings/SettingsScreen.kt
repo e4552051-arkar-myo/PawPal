@@ -5,17 +5,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import uk.ac.tees.mad.e4552051.pawpal.ui.components.AppTopBar
+import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.SettingsViewModel
 
 @Composable
-fun SettingsScreen(onNavigateBack: () -> Unit) {
-
-    // Placeholder toggle states (for Sprint 2 only)
-    var notificationsEnabled by remember { mutableStateOf(true) }
-    var darkModeEnabled by remember { mutableStateOf(false) }
+fun SettingsScreen(
+    viewModel: SettingsViewModel = viewModel(),
+    onNavigateBack: () -> Unit
+) {
+    // Collect DataStore values
+    val darkModeEnabled by viewModel.darkMode.collectAsState(initial = false)
+    val notificationsEnabled by viewModel.notifications.collectAsState(initial = true)
 
     Scaffold(
-        topBar = { AppTopBar("Settings") }
+        topBar = { AppTopBar("Settings", onNavigateToSettings = null) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -35,7 +39,7 @@ fun SettingsScreen(onNavigateBack: () -> Unit) {
                 Text("Enable Notifications")
                 Switch(
                     checked = notificationsEnabled,
-                    onCheckedChange = { notificationsEnabled = it }
+                    onCheckedChange = { viewModel.setNotifications(it) }
                 )
             }
 
@@ -49,13 +53,12 @@ fun SettingsScreen(onNavigateBack: () -> Unit) {
                 Text("Enable Dark Mode")
                 Switch(
                     checked = darkModeEnabled,
-                    onCheckedChange = { darkModeEnabled = it }
+                    onCheckedChange = { viewModel.setDarkMode(it) }
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // App Version
             Text("App Version: 1.0.0", style = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.weight(1f))

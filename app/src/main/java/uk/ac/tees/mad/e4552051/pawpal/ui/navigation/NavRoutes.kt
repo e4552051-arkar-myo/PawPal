@@ -6,4 +6,10 @@ object NavRoutes {
     const val ADD_PET = "add_pet"
     const val REMINDERS = "reminders"
     const val SETTINGS = "settings"
+
+    const val PET_DETAIL = "pet_detail"
+
+    const val REMINDER_ADD = "reminder_add"
+
+    const val REMINDER_DETAIL = "reminder_detail/{id}"
 }

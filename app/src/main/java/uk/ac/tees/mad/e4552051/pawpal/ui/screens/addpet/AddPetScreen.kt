@@ -1,28 +1,62 @@
 package uk.ac.tees.mad.e4552051.pawpal.ui.screens.addpet
 
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import uk.ac.tees.mad.e4552051.pawpal.ui.components.AppTopBar
+import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.PetViewModel
 
 @Composable
-fun AddPetScreen(onNavigateBack: () -> Unit) {
-
-    // Local states for fields (Sprint 2 placeholders)
+fun AddPetScreen(
+    viewModel: PetViewModel,
+    onNavigateBack: () -> Unit
+) {
     var petName by remember { mutableStateOf("") }
     var petType by remember { mutableStateOf("") }
     var petAge by remember { mutableStateOf("") }
+    var imageUri by remember { mutableStateOf<String?>(null) }
+
+    // Gallery picker launcher
+    val context = LocalContext.current
+    val contentResolver = context.contentResolver
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            imageUri = uri.toString()
+        }
+    }
 
     Scaffold(
         topBar = { AppTopBar("Add Pet") }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -31,20 +65,35 @@ fun AddPetScreen(onNavigateBack: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // IMAGE PLACEHOLDER BLOCK
-            Box(
-                modifier = Modifier
-                    .size(140.dp)
-                    .border(1.dp, Color.Gray, RoundedCornerShape(12.dp))
-                    .background(Color(0xFFEFEFEF), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Pet Image\n(placeholder)", textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            // IMAGE PLACEHOLDER / PREVIEW
+            if (imageUri != null) {
+                Image(
+                    painter = rememberAsyncImagePainter(imageUri),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(140.dp)
+                        .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(140.dp)
+                        .border(1.dp, Color.Gray, CircleShape)
+                        .background(Color(0xFFEFEFEF), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Pet Image\n(placeholder)",
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Button(onClick = { /* TODO: Select Image */ }) {
+            Button(onClick = { imagePickerLauncher.launch("image/*") }) {
                 Text("Select Image")
             }
 
@@ -78,12 +127,22 @@ fun AddPetScreen(onNavigateBack: () -> Unit) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ADD PET BUTTON (Action Placeholder)
+            // SAVE PET BUTTON
             Button(
-                onClick = { /* TODO: Save to DB in Sprint 3 */ },
+                onClick = {
+                    if (petName.isNotBlank() && petType.isNotBlank() && petAge.isNotBlank()) {
+                        viewModel.addPet(
+                            name = petName,
+                            type = petType,
+                            age = petAge.toIntOrNull() ?: 0,
+                            imageUri = imageUri
+                        )
+                        onNavigateBack()
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Add Pet")
+                Text("Save Pet")
             }
 
             Spacer(modifier = Modifier.height(12.dp))
