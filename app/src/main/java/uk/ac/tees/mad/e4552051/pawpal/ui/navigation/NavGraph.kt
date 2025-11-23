@@ -24,6 +24,8 @@ import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.PetViewModel
 import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.PetViewModelFactory
 import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.ReminderViewModel
 import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.ReminderViewModelFactory
+import uk.ac.tees.mad.e4552051.pawpal.ui.screens.reminders.AddReminderScreen
+import uk.ac.tees.mad.e4552051.pawpal.ui.screens.reminders.ReminderDetailScreen
 
 @Composable
 fun PawPalNavGraph(
@@ -80,8 +82,18 @@ fun PawPalNavGraph(
         composable(NavRoutes.REMINDERS) {
             ReminderScreen(
                 onNavigateBack = { navController.navigateUp() },
-                onAddReminder = { navController.navigate("reminder_add") },
+                onReminderClick = { reminder ->
+                    navController.navigate("reminder_detail/${reminder.id}")
+                },
+                onAddReminder = { navController.navigate(NavRoutes.REMINDER_ADD) },
                 viewModel = reminderViewModel
+            )
+        }
+
+        composable(NavRoutes.REMINDER_ADD) {
+            AddReminderScreen(
+                viewModel = reminderViewModel,
+                onNavigateBack = { navController.navigateUp() }
             )
         }
 
@@ -90,18 +102,36 @@ fun PawPalNavGraph(
         }
 
         composable("pet_detail/{petId}") { backStackEntry ->
-//            val petId = backStackEntry.arguments?.getString("petId")?.toInt() ?: 0
+            val petId = backStackEntry.arguments?.getString("petId")?.toIntOrNull()
 
-//            val petList by petViewModel.pets.collectAsState(initial = emptyList())
-//            val pet = petList.find { it.id == petId }
-            val pet by petViewModel.getPet(id).collectAsState(null)
+            if (petId == null) {
+                // optional: show error or just navigate back
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                val pet by petViewModel.getPet(petId).collectAsState(initial = null)
 
-            val petData = pet
+                if (pet != null) {
+                    PetDetailScreen(
+                        pet = pet!!,
+                        viewModel = petViewModel,
+                        onNavigateBack = { navController.navigateUp() }
+                    )
+                } else {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+            }
+        }
 
-            if (petData != null) {
-                PetDetailScreen(
-                    pet = petData,
-                    viewModel = petViewModel,
+        composable("reminder_detail/{id}") { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id")?.toIntOrNull()
+            if (id != null) {
+                ReminderDetailScreen(
+                    reminderId = id,
+                    viewModel = reminderViewModel,
                     onNavigateBack = { navController.navigateUp() }
                 )
             } else {

@@ -61,6 +61,13 @@ fun PetDetailScreen(
             ) {
                 Text("Delete Pet")
             }
+            // Back Button
+            OutlinedButton(
+                onClick = onNavigateBack,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Back")
+            }
 
             if (showDeleteDialog) {
                 AlertDialog(
