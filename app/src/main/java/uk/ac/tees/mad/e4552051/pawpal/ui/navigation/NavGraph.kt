@@ -1,5 +1,8 @@
 package uk.ac.tees.mad.e4552051.pawpal.ui.navigation
 
+import android.app.Application
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -16,8 +19,8 @@ import uk.ac.tees.mad.e4552051.pawpal.data.repository.RepositoryProvider
 import androidx.compose.runtime.*
 import uk.ac.tees.mad.e4552051.pawpal.ui.screens.splash.SplashScreen
 import uk.ac.tees.mad.e4552051.pawpal.ui.screens.home.HomeScreen
-import uk.ac.tees.mad.e4552051.pawpal.ui.screens.addpet.AddPetScreen
-import uk.ac.tees.mad.e4552051.pawpal.ui.screens.petdetail.PetDetailScreen
+import uk.ac.tees.mad.e4552051.pawpal.ui.screens.pets.AddPetScreen
+import uk.ac.tees.mad.e4552051.pawpal.ui.screens.pets.PetDetailScreen
 import uk.ac.tees.mad.e4552051.pawpal.ui.screens.reminders.ReminderScreen
 import uk.ac.tees.mad.e4552051.pawpal.ui.screens.settings.SettingsScreen
 import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.PetViewModel
@@ -26,7 +29,9 @@ import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.ReminderViewModel
 import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.ReminderViewModelFactory
 import uk.ac.tees.mad.e4552051.pawpal.ui.screens.reminders.AddReminderScreen
 import uk.ac.tees.mad.e4552051.pawpal.ui.screens.reminders.ReminderDetailScreen
+import uk.ac.tees.mad.e4552051.pawpal.ui.screens.vets.VetFinderScreen
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun PawPalNavGraph(
     navController: NavHostController,
@@ -35,13 +40,14 @@ fun PawPalNavGraph(
 
     // Create PetViewModel ONCE and share it across multiple screens
     val context = LocalContext.current
+    val application = context.applicationContext as Application
     val repository = RepositoryProvider.providePetRepository(context)
     val petViewModel: PetViewModel = viewModel(
-        factory = PetViewModelFactory(repository)
+        factory = PetViewModelFactory(application, repository)
     )
     val reminderRepository = RepositoryProvider.provideReminderRepository(context)
     val reminderViewModel: ReminderViewModel = viewModel(
-        factory = ReminderViewModelFactory(reminderRepository)
+        factory = ReminderViewModelFactory(application, reminderRepository)
     )
 
     NavHost(
@@ -69,6 +75,7 @@ fun PawPalNavGraph(
                 onNavigateToAddPet = { navController.navigate(NavRoutes.ADD_PET) },
                 onNavigateToReminders = { navController.navigate(NavRoutes.REMINDERS) },
                 onNavigateToSettings = { navController.navigate(NavRoutes.SETTINGS) },
+                onNavigateToVets = { navController.navigate(NavRoutes.VETS) }
             )
         }
 
@@ -143,6 +150,12 @@ fun PawPalNavGraph(
                     CircularProgressIndicator()
                 }
             }
+        }
+
+        composable(NavRoutes.VETS) {
+            VetFinderScreen(
+                onNavigateBack = { navController.navigateUp() }
+            )
         }
     }
 }

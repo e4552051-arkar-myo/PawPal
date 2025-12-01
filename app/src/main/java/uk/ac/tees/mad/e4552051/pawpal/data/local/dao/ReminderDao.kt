@@ -8,7 +8,7 @@ import uk.ac.tees.mad.e4552051.pawpal.data.local.entity.ReminderEntity
 interface ReminderDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun addReminder(reminder: ReminderEntity)
+    suspend fun addReminder(reminder: ReminderEntity) : Long
 
     @Query("SELECT * FROM reminders ORDER BY date ASC")
     fun getAllReminders(): Flow<List<ReminderEntity>>

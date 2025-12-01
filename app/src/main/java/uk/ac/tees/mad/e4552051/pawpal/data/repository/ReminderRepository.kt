@@ -7,9 +7,26 @@ class ReminderRepository(private val dao: ReminderDao) {
 
     fun getReminders() = dao.getAllReminders()
 
-    suspend fun addReminder(rem: ReminderEntity) = dao.addReminder(rem)
+    suspend fun addReminder(reminder: ReminderEntity, syncEnabled: Boolean) {
+        val generatedId = dao.addReminder(reminder).toInt()
 
-    suspend fun updateReminder(rem: ReminderEntity) = dao.updateReminder(rem)
+        if (syncEnabled) {
+            CloudSyncRepository.syncReminder(reminder.copy(id = generatedId))
+        }
+    }
 
-    suspend fun deleteReminder(rem: ReminderEntity) = dao.deleteReminder(rem)
+    suspend fun updateReminder(rem: ReminderEntity, cloudSyncEnabled: Boolean){
+        dao.updateReminder(rem)
+        if (cloudSyncEnabled) {
+            CloudSyncRepository.updateReminder(rem)
+        }
+    }
+
+    suspend fun deleteReminder(rem: ReminderEntity, cloudSyncEnabled: Boolean) {
+        dao.deleteReminder(rem)
+        if (cloudSyncEnabled) {
+            CloudSyncRepository.deleteReminder(rem.id)
+        }
+
+    }
 }

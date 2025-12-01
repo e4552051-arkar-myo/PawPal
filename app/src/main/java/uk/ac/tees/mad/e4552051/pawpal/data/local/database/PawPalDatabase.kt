@@ -9,7 +9,7 @@ import uk.ac.tees.mad.e4552051.pawpal.data.local.entity.ReminderEntity
 
 @Database(
     entities = [PetEntity::class, ReminderEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class PawPalDatabase : RoomDatabase() {

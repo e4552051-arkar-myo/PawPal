@@ -1,9 +1,11 @@
-package uk.ac.tees.mad.e4552051.pawpal.data.datastore
+package uk.ac.tees.mad.e4552051.pawpal.data.repository
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import uk.ac.tees.mad.e4552051.pawpal.data.datastore.SettingsKeys
+import uk.ac.tees.mad.e4552051.pawpal.data.datastore.settingsDataStore
 
 class SettingsRepository(private val context: Context) {
 
@@ -13,11 +15,18 @@ class SettingsRepository(private val context: Context) {
     val notifications: Flow<Boolean> =
         context.settingsDataStore.data.map { it[SettingsKeys.NOTIFICATIONS] ?: true }
 
+    val cloudSync: Flow<Boolean> =
+        context.settingsDataStore.data.map { it[SettingsKeys.CLOUD_SYNC] ?: false }
+
     suspend fun setDarkMode(value: Boolean) {
         context.settingsDataStore.edit { it[SettingsKeys.DARK_MODE] = value }
     }
 
     suspend fun setNotifications(value: Boolean) {
         context.settingsDataStore.edit { it[SettingsKeys.NOTIFICATIONS] = value }
+    }
+
+    suspend fun setCloudSync(value: Boolean) {
+        context.settingsDataStore.edit { it[SettingsKeys.CLOUD_SYNC] = value }
     }
 }

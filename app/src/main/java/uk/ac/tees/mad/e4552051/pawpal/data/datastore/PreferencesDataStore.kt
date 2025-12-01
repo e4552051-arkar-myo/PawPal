@@ -10,4 +10,6 @@ val Context.settingsDataStore by preferencesDataStore(name = "app_settings")
 object SettingsKeys {
     val DARK_MODE = booleanPreferencesKey("dark_mode")
     val NOTIFICATIONS = booleanPreferencesKey("notifications")
+
+    val CLOUD_SYNC = booleanPreferencesKey("cloud_sync")
 }

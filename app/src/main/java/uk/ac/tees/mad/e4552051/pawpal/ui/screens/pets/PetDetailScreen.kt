@@ -1,6 +1,6 @@
-package uk.ac.tees.mad.e4552051.pawpal.ui.screens.addpet
+package uk.ac.tees.mad.e4552051.pawpal.ui.screens.pets
 
-import android.content.Intent
+import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,42 +21,63 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import uk.ac.tees.mad.e4552051.pawpal.ui.components.AppTopBar
 import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.PetViewModel
+import uk.ac.tees.mad.e4552051.pawpal.data.local.entity.PetEntity
+import androidx.core.content.FileProvider
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
-fun AddPetScreen(
+fun PetDetailScreen(
+    pet: PetEntity,
     viewModel: PetViewModel,
     onNavigateBack: () -> Unit
 ) {
-    var petName by remember { mutableStateOf("") }
-    var petType by remember { mutableStateOf("") }
-    var petAge by remember { mutableStateOf("") }
-    var imageUri by remember { mutableStateOf<String?>(null) }
-
-    // Gallery picker launcher
     val context = LocalContext.current
-    val contentResolver = context.contentResolver
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
+    var petName by remember { mutableStateOf(pet.name) }
+    var petType by remember { mutableStateOf(pet.type) }
+    var petAge by remember { mutableStateOf(pet.age.toString()) }
+    var imageUri by remember { mutableStateOf(pet.imageUri) }
+    var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    // Gallery picker
+    val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            try {
-                contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-
-            imageUri = uri.toString()
+    ) { uri ->
+        uri?.let {
+            imageUri = it.toString()
         }
     }
 
-    Scaffold(
-        topBar = { AppTopBar("Add Pet") }
-    ) { padding ->
+    // Camera launcher
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && cameraImageUri != null) {
+            imageUri = cameraImageUri.toString()
+        }
+    }
 
+    fun createImageUri(context: Context): Uri {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+            .format(System.currentTimeMillis())
+        val fileName = "PET_EDIT_${timeStamp}.jpg"
+        val dir = File(context.cacheDir, "images").apply { mkdirs() }
+        val file = File(dir, fileName)
+
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+    }
+
+    Scaffold(
+        topBar = { AppTopBar("Edit Pet") }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -65,7 +86,7 @@ fun AddPetScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // IMAGE PLACEHOLDER / PREVIEW
+            // --- IMAGE PREVIEW ---
             if (imageUri != null) {
                 Image(
                     painter = rememberAsyncImagePainter(imageUri),
@@ -93,13 +114,24 @@ fun AddPetScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Button(onClick = { imagePickerLauncher.launch("image/*") }) {
-                Text("Select Image")
+            // --- GALLERY & CAMERA BUTTONS ---
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { galleryLauncher.launch("image/*") }) {
+                    Text("Gallery")
+                }
+
+                OutlinedButton(onClick = {
+                    val uri = createImageUri(context)
+                    cameraImageUri = uri
+                    cameraLauncher.launch(uri)
+                }) {
+                    Text("Camera")
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // INPUT FIELDS
+            // --- INPUT FIELDS ---
             OutlinedTextField(
                 value = petName,
                 onValueChange = { petName = it },
@@ -127,32 +159,65 @@ fun AddPetScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // SAVE PET BUTTON
+            // --- SAVE CHANGES ---
             Button(
                 onClick = {
-                    if (petName.isNotBlank() && petType.isNotBlank() && petAge.isNotBlank()) {
-                        viewModel.addPet(
+                    viewModel.updatePet(
+                        pet.copy(
                             name = petName,
                             type = petType,
-                            age = petAge.toIntOrNull() ?: 0,
+                            age = petAge.toIntOrNull() ?: pet.age,
                             imageUri = imageUri
                         )
-                        onNavigateBack()
-                    }
+                    )
+                    onNavigateBack()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save Pet")
+                Text("Save Changes")
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Back Button
+            // --- DELETE BUTTON ---
+            OutlinedButton(
+                onClick = { showDeleteDialog = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Delete Pet")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // --- BACK BUTTON ---
             OutlinedButton(
                 onClick = onNavigateBack,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Back")
+            }
+
+            // --- DELETE CONFIRMATION DIALOG ---
+            if (showDeleteDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteDialog = false },
+                    title = { Text("Delete Pet") },
+                    text = { Text("Are you sure you want to delete this pet?") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            viewModel.deletePet(pet)
+                            showDeleteDialog = false
+                            onNavigateBack()
+                        }) {
+                            Text("Delete")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
             }
         }
     }

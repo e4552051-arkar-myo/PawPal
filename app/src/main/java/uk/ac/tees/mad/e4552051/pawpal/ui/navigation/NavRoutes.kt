@@ -12,4 +12,6 @@ object NavRoutes {
     const val REMINDER_ADD = "reminder_add"
 
     const val REMINDER_DETAIL = "reminder_detail/{id}"
+
+    const val VETS = "vets"
 }

@@ -7,13 +7,32 @@ class PetRepository(
     private val petDao: PetDao
 ) {
 
-    fun getPets() = petDao.getAllPets()
+        fun getPets() = petDao.getAllPets()
 
-    fun getPetById(id: Int) = petDao.getPetById(id)
+        fun getPetById(id: Int) = petDao.getPetById(id)
 
-    suspend fun addPet(pet: PetEntity) = petDao.insertPet(pet)
+        suspend fun addPet(pet: PetEntity, cloudSyncEnabled: Boolean) {
+            val generatedId = petDao.insertPet(pet).toInt()
 
-    suspend fun updatePet(pet: PetEntity) = petDao.updatePet(pet)
+            if (cloudSyncEnabled) {
+                CloudSyncRepository.syncPet(
+                    pet.copy(id = generatedId)
+                )
+            }
+        }
 
-    suspend fun deletePet(pet: PetEntity) = petDao.deletePet(pet)
-}
+        suspend fun updatePet(pet: PetEntity, cloudSyncEnabled: Boolean) {
+            petDao.updatePet(pet)
+
+            if (cloudSyncEnabled) {
+                CloudSyncRepository.updatePet(pet)
+            }
+        }
+
+        suspend fun deletePet(pet: PetEntity, cloudSyncEnabled: Boolean) {
+            petDao.deletePet(pet)
+            if (cloudSyncEnabled) {
+                CloudSyncRepository.deletePet(pet.id)
+            }
+        }
+    }

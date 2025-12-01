@@ -9,7 +9,7 @@ import uk.ac.tees.mad.e4552051.pawpal.data.local.entity.PetEntity
 interface PetDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPet(pet: PetEntity)
+    suspend fun insertPet(pet: PetEntity) : Long
 
     @Query("SELECT * FROM pets ORDER BY id DESC")
     fun getAllPets(): Flow<List<PetEntity>>

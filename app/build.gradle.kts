@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("org.jetbrains.kotlin.kapt") // for Room
+    id("com.google.gms.google-services") version "4.4.1"
 }
 
 android {
@@ -19,6 +20,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        val mapsKey = project.findProperty("MAPS_API_KEY") as String? ?: ""
+        val placesKey = project.findProperty("PLACES_API_KEY") as String? ?: ""
+
+        buildConfigField("String", "MAPS_API_KEY", "\"$mapsKey\"")
+        buildConfigField("String", "PLACES_API_KEY", "\"$placesKey\"")
     }
 
     buildTypes {
@@ -39,6 +45,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -79,4 +86,16 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    // -- Firebase --
+    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
+    implementation("com.google.firebase:firebase-firestore-ktx")
+
+    // -- Google map --
+    implementation("com.google.maps.android:maps-compose:5.0.3")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.android.libraries.places:places:3.4.0")
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 }

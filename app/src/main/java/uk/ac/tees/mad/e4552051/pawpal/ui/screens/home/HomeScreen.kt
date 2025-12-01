@@ -26,7 +26,9 @@ fun HomeScreen(
     onNavigateToAddPet: () -> Unit,
     onNavigateToReminders: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    onPetClick: (PetEntity) -> Unit
+    onPetClick: (PetEntity) -> Unit,
+    onNavigateToVets: () -> Unit
+
 ) {
     val petList by viewModel.pets.collectAsState(initial = emptyList())
 
@@ -54,12 +56,18 @@ fun HomeScreen(
 
             Text("Your Pets", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = { onNavigateToVets() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Find Nearby Vets")
+            }
 
             if (petList.isEmpty()) {
                 Text("No pets yet. Tap + to add your first pet!")
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(petList) { pet ->
+                    items(petList, key = { it.id }) { pet ->
                         PetCard(
                             pet = pet,
                             onClick = { onPetClick(pet) }

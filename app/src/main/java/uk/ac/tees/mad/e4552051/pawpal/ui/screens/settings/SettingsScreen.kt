@@ -17,6 +17,7 @@ fun SettingsScreen(
     // Collect DataStore values
     val darkModeEnabled by viewModel.darkMode.collectAsState(initial = false)
     val notificationsEnabled by viewModel.notifications.collectAsState(initial = true)
+    val cloudSyncEnabled by viewModel.cloudSync.collectAsState(initial = false)
 
     Scaffold(
         topBar = { AppTopBar("Settings", onNavigateToSettings = null) }
@@ -41,6 +42,21 @@ fun SettingsScreen(
                     checked = notificationsEnabled,
                     onCheckedChange = { viewModel.setNotifications(it) }
                 )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Cloud Sync toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Enable Cloud Sync")
+                Switch(
+                    checked = cloudSyncEnabled,
+                    onCheckedChange = { viewModel.setCloudSync(it) }
+                )
+
             }
 
             Spacer(modifier = Modifier.height(16.dp))
