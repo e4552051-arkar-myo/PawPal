@@ -3,6 +3,7 @@ package uk.ac.tees.mad.e4552051.pawpal.ui.screens.reminders
 import android.app.AlarmManager
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -75,23 +76,41 @@ fun AddReminderScreen(
             // SAVE BUTTON
             Button(
                 onClick = {
-                    if (petName.isBlank() || type.isBlank() || selectedDate == null || selectedTime == null) {
+                    Log.d(
+                        "ReminderDebug",
+                        "Save clicked: petName='$petName', type='$type', date=$selectedDate, time=$selectedTime"
+                    )
+
+                    // 1) Basic text validation
+                    if (petName.isBlank() || type.isBlank()) {
                         coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Please fill all fields")
+                            snackbarHostState.showSnackbar("Please enter pet name and reminder type")
                         }
                         return@Button
                     }
 
+                    // 2) Date/time must be selected
+                    if (selectedDate == null || selectedTime == null) {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Please select date and time")
+                        }
+                        return@Button
+                    }
+
+                    // 3) Safe destructuring
                     val (hour, minute) = selectedTime!!
+
                     val calendar = java.util.Calendar.getInstance().apply {
                         timeInMillis = selectedDate!!
                         set(java.util.Calendar.HOUR_OF_DAY, hour)
                         set(java.util.Calendar.MINUTE, minute)
                         set(java.util.Calendar.SECOND, 0)
                     }
+
                     val triggerAtMillis = calendar.timeInMillis
                     val notificationId = Random.nextInt()
 
+                    // 4) Save in DB with real trigger time
                     viewModel.addReminder(
                         petName = petName,
                         reminderType = type,
@@ -99,27 +118,29 @@ fun AddReminderScreen(
                         date = triggerAtMillis
                     )
 
+                    // 5) Permission check for exact alarm
                     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                         !alarmManager.canScheduleExactAlarms()
                     ) {
                         coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Please allow exact alarms in settings")
+                            snackbarHostState.showSnackbar("Please allow exact alarms in system settings")
                         }
                         return@Button
                     }
 
+                    // 6) Schedule notification
+                    Log.d("ReminderDebug", "Calling scheduleReminder at $triggerAtMillis")
                     ReminderNotifications.scheduleReminder(
-                        context,
-                        triggerAtMillis,
-                        "$petName – $type",
-                        "Time for $type for $petName",
-                        notificationId
+                        context = context,
+                        triggerAtMillis = triggerAtMillis,
+                        title = "$petName – $type",
+                        message = "Time for $type for $petName",
+                        notificationId = notificationId
                     )
 
                     coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Reminder Scheduled!")
+                        snackbarHostState.showSnackbar("Reminder scheduled!")
                     }
 
                     onNavigateBack()

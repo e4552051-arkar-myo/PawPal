@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -14,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -30,9 +32,10 @@ import uk.ac.tees.mad.e4552051.pawpal.ui.components.AppTopBar
 @Composable
 fun VetFinderScreen(onNavigateBack: () -> Unit) {
 
+    val TAG = "VetFinder"
     val context = LocalContext.current
 
-    // Permission
+    // Permission state
     var hasLocationPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -42,18 +45,21 @@ fun VetFinderScreen(onNavigateBack: () -> Unit) {
         )
     }
 
+    // Request permission launcher
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        hasLocationPermission = granted
+    ) {
+        hasLocationPermission = it
     }
+
+    // Request permission at start
     LaunchedEffect(Unit) {
         if (!hasLocationPermission) {
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
-    // User location
+    // User Location
     val fusedClient = LocationServices.getFusedLocationProviderClient(context)
     var userLocation by remember { mutableStateOf<Location?>(null) }
 
@@ -61,28 +67,63 @@ fun VetFinderScreen(onNavigateBack: () -> Unit) {
         if (hasLocationPermission) {
             fusedClient.lastLocation.addOnSuccessListener {
                 userLocation = it
+                Log.d(TAG, "Got user location = $it")
             }
         }
     }
 
-    // Nearby vet results
+    // Vet results
     var vetMarkers by remember { mutableStateOf<List<Pair<String, LatLng>>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Fetch real vet data
+    // API call for nearby vets
     LaunchedEffect(userLocation) {
-        userLocation?.let { loc ->
+        if (userLocation == null) return@LaunchedEffect
+
+        isLoading = true
+        errorMessage = null
+
+        try {
+            val loc = "${userLocation!!.latitude},${userLocation!!.longitude}"
+
+            Log.d(TAG, "Calling Places API with loc=$loc")
+
             val response = PlacesApi.service.getNearbyVets(
-                location = "${loc.latitude},${loc.longitude}",
+                location = loc,
+                radius = 3500,
+                type = "veterinary_care",
                 apiKey = Secrets.PLACES_API_KEY
             )
 
-            vetMarkers = response.results.map {
-                it.name to LatLng(it.geometry.location.lat, it.geometry.location.lng)
+//            if (response.status != "OK") {
+//                errorMessage = "Places API error: ${response.status}"
+//                Log.e(TAG, "API error: ${response.status}")
+//                isLoading = false
+//                return@LaunchedEffect
+//            }
+
+            vetMarkers = response.results.mapNotNull { r ->
+                try {
+                    val lat = r.geometry?.location?.lat
+                    val lng = r.geometry?.location?.lng
+                    if (lat != null && lng != null) {
+                        r.name to LatLng(lat, lng)
+                    } else null
+                } catch (e: Exception) {
+                    null
+                }
             }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Places API crashed", e)
+            errorMessage = "Failed to load vet locations."
         }
+
+        isLoading = false
     }
 
-    // Camera position
+    // Camera
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
             userLocation?.let { LatLng(it.latitude, it.longitude) }
@@ -91,54 +132,74 @@ fun VetFinderScreen(onNavigateBack: () -> Unit) {
         )
     }
 
+    // UI
     Scaffold(
         topBar = { AppTopBar("Nearby Vets") }
     ) { padding ->
 
         Column(
-            modifier = Modifier
-                .padding(padding)
+            modifier = Modifier.padding(padding)
         ) {
 
-            // Map Top Half
-            GoogleMap(
+            // MAP 50%
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
-                cameraPositionState = cameraPositionState,
-                properties = MapProperties(
-                    isMyLocationEnabled = hasLocationPermission
-                ),
-                uiSettings = MapUiSettings(
-                    myLocationButtonEnabled = true,
-                    zoomControlsEnabled = true
-                )
+                    .weight(1f)
             ) {
 
-                // Show user location marker manually (optional)
-                userLocation?.let {
-                    Marker(
-                        state = rememberMarkerState(
-                            position = LatLng(it.latitude, it.longitude)
-                        ),
-                        title = "You are here"
+                GoogleMap(
+                    modifier = Modifier.fillMaxSize(),
+                    cameraPositionState = cameraPositionState,
+                    properties = MapProperties(
+                        isMyLocationEnabled = hasLocationPermission
+                    ),
+                    uiSettings = MapUiSettings(
+                        myLocationButtonEnabled = true,
+                        zoomControlsEnabled = true
+                    )
+                ) {
+                    // User marker
+                    userLocation?.let {
+                        Marker(
+                            state = rememberMarkerState(
+                                position = LatLng(it.latitude, it.longitude)
+                            ),
+                            title = "You are here"
+                        )
+                    }
+
+                    // Vet markers
+                    vetMarkers.forEach { (name, pos) ->
+                        Marker(
+                            state = rememberMarkerState(pos.toString()),
+                            title = name
+                        )
+                    }
+                }
+
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
 
-                // Vet markers
-                vetMarkers.forEach { (name, latLng) ->
-                    Marker(
-                        state = rememberMarkerState(position = latLng),
-                        title = name
+                errorMessage?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(16.dp)
                     )
                 }
             }
 
-            // Vet List Bottom Half
+            // LIST 50%
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f) // bottom 50%
+                    .weight(1f)
             ) {
                 Text(
                     text = "Nearby Veterinary Clinics",
@@ -151,17 +212,14 @@ fun VetFinderScreen(onNavigateBack: () -> Unit) {
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-
-                    items(vetMarkers) { (name, position) ->
-
+                    items(vetMarkers) { (name, pos) ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    // Open Google Maps for navigation
                                     val intent = Intent(
                                         Intent.ACTION_VIEW,
-                                        Uri.parse("google.navigation:q=${position.latitude},${position.longitude}")
+                                        Uri.parse("google.navigation:q=${pos.latitude},${pos.longitude}")
                                     )
                                     intent.setPackage("com.google.android.apps.maps")
                                     context.startActivity(intent)

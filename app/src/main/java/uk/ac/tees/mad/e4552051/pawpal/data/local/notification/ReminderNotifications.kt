@@ -8,7 +8,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import androidx.annotation.RequiresPermission
+import android.util.Log
 
 object ReminderNotifications {
 
@@ -33,6 +33,8 @@ object ReminderNotifications {
         message: String,
         notificationId: Int
     ) {
+        Log.d("ReminderDebug", "Scheduling alarm at: $triggerAtMillis")
+        Log.d("ReminderDebug", "Current time: ${System.currentTimeMillis()}")
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
         // Android 12+ requires explicit permission check

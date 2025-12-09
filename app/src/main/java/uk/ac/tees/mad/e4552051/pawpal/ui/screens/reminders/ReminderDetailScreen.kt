@@ -1,19 +1,25 @@
 package uk.ac.tees.mad.e4552051.pawpal.ui.screens.reminders
 
+import android.app.AlarmManager
+import android.content.Context
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import uk.ac.tees.mad.e4552051.pawpal.data.local.entity.ReminderEntity
+import uk.ac.tees.mad.e4552051.pawpal.data.local.notification.ReminderNotifications
 import uk.ac.tees.mad.e4552051.pawpal.ui.components.AppTopBar
 import uk.ac.tees.mad.e4552051.pawpal.ui.components.ReminderForm
 import uk.ac.tees.mad.e4552051.pawpal.ui.components.TimePickerDialog
 import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.ReminderViewModel
 import java.util.*
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,10 +28,13 @@ fun ReminderDetailScreen(
     viewModel: ReminderViewModel,
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
+
     var reminder by remember { mutableStateOf<ReminderEntity?>(null) }
 
     LaunchedEffect(reminderId) {
         reminder = viewModel.getReminderById(reminderId)
+        Log.d("ReminderDebug", "Loaded reminder: $reminder")
     }
 
     if (reminder == null) {
@@ -46,15 +55,20 @@ fun ReminderDetailScreen(
 
     var selectedDate: Long? by remember { mutableStateOf(reminder!!.date) }
     var selectedTime: Pair<Int, Int>? by remember {
-        mutableStateOf(initialCalendar.get(Calendar.HOUR_OF_DAY) to initialCalendar.get(Calendar.MINUTE))
+        mutableStateOf(
+            initialCalendar.get(Calendar.HOUR_OF_DAY) to
+                    initialCalendar.get(Calendar.MINUTE)
+        )
     }
+
     // Picker visibility
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
+
     val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = { AppTopBar("Edit Reminder") },
@@ -78,42 +92,91 @@ fun ReminderDetailScreen(
                 dateText = selectedDate?.let { sdf.format(Date(it)) } ?: "Select Date",
                 onDateClick = { showDatePicker = true },
                 onClearDate = { selectedDate = null },
-
-                timeText = selectedTime?.let { (h,m)->"%02d:%02d".format(h,m)} ?: "Select Time",
+                timeText = selectedTime?.let { (h, m) -> String.format("%02d:%02d", h, m) }
+                    ?: "Select Time",
                 onTimeClick = { showTimePicker = true },
                 onClearTime = { selectedTime = null }
             )
 
-            // Save button
+            // SAVE CHANGES
             Button(
                 onClick = {
-                    if (petName.isBlank() || type.isBlank() || selectedDate == null || selectedTime == null) {
+                    Log.d(
+                        "ReminderDebug",
+                        "Detail Save clicked: petName='$petName', type='$type', date=$selectedDate, time=$selectedTime"
+                    )
+
+                    // 1) Validate text
+                    if (petName.isBlank() || type.isBlank()) {
                         coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Please fill all fields")
+                            snackbarHostState.showSnackbar("Please enter pet name and reminder type")
                         }
                         return@Button
                     }
+
+                    // 2) Validate date & time
+                    if (selectedDate == null || selectedTime == null) {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Please select date and time")
+                        }
+                        return@Button
+                    }
+
+                    // 3) Safe destructuring
+                    val (hour, minute) = selectedTime!!
+
                     val updatedCalendar = Calendar.getInstance().apply {
+                        // DATE
+                        timeInMillis = selectedDate!!
 
-                        // DATE part
-                        timeInMillis = selectedDate ?: System.currentTimeMillis()
-
-                        // TIME part (safe)
-                        val (hour, minute) = selectedTime ?: (0 to 0)
-
+                        // TIME
                         set(Calendar.HOUR_OF_DAY, hour)
                         set(Calendar.MINUTE, minute)
                         set(Calendar.SECOND, 0)
                     }
 
+                    val triggerAtMillis = updatedCalendar.timeInMillis
+
+                    Log.d("ReminderDebug", "Updating reminder to trigger at $triggerAtMillis")
+
+                    // 4) Update DB
                     viewModel.updateReminder(
                         reminder!!.copy(
                             petName = petName,
                             reminderType = type,
                             note = note.ifBlank { null },
-                            date = updatedCalendar.timeInMillis
+                            date = triggerAtMillis
                         )
                     )
+
+                    // 5) Re-schedule alarm for edited time
+                    val alarmManager =
+                        context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                        alarmManager.canScheduleExactAlarms()
+                    ) {
+                        // Use reminder id as notification id so it overwrites previous one
+                        val notificationId = reminder!!.id
+
+                        ReminderNotifications.scheduleReminder(
+                            context = context,
+                            triggerAtMillis = triggerAtMillis,
+                            title = "$petName – $type",
+                            message = "Time for $type for $petName",
+                            notificationId = notificationId
+                        )
+
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Reminder updated")
+                        }
+                    } else {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(
+                                "Reminder saved, but exact alarms are disabled in system settings"
+                            )
+                        }
+                    }
 
                     onNavigateBack()
                 },
@@ -140,7 +203,7 @@ fun ReminderDetailScreen(
 
     // DATE PICKER
     if (showDatePicker) {
-        val datePickerState = rememberDatePickerState()
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDate)
 
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },

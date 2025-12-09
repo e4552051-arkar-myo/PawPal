@@ -45,11 +45,6 @@ fun ReminderItem(
                     style = MaterialTheme.typography.bodyMedium,
                     textDecoration = if (isDone) TextDecoration.LineThrough else TextDecoration.None
                 )
-                Text(
-                    dateString,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
 
                 if (!reminder.note.isNullOrBlank()) {
                     Text(
@@ -58,6 +53,13 @@ fun ReminderItem(
                         textDecoration = if (isDone) TextDecoration.LineThrough else TextDecoration.None
                     )
                 }
+
+                Text(
+                    dateString,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
             }
 
             IconButton(
