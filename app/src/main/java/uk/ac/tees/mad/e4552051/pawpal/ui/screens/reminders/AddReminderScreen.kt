@@ -45,7 +45,10 @@ fun AddReminderScreen(
     val sdf = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
 
     Scaffold(
-        topBar = { AppTopBar("Add Reminder") },
+        topBar = { AppTopBar(
+            title = "Add Reminders",
+            onBack = onNavigateBack
+        ) },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
 
@@ -148,13 +151,6 @@ fun AddReminderScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Save Reminder")
-            }
-            // Back Button
-            OutlinedButton(
-                onClick = onNavigateBack,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Back")
             }
         }
     }

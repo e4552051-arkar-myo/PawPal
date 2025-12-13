@@ -96,13 +96,6 @@ fun VetFinderScreen(onNavigateBack: () -> Unit) {
                 apiKey = Secrets.PLACES_API_KEY
             )
 
-//            if (response.status != "OK") {
-//                errorMessage = "Places API error: ${response.status}"
-//                Log.e(TAG, "API error: ${response.status}")
-//                isLoading = false
-//                return@LaunchedEffect
-//            }
-
             vetMarkers = response.results.mapNotNull { r ->
                 try {
                     val lat = r.geometry?.location?.lat
@@ -134,7 +127,10 @@ fun VetFinderScreen(onNavigateBack: () -> Unit) {
 
     // UI
     Scaffold(
-        topBar = { AppTopBar("Nearby Vets") }
+        topBar = { AppTopBar(
+            title = "Nearby Vets",
+            onBack = onNavigateBack
+        ) }
     ) { padding ->
 
         Column(
@@ -238,14 +234,6 @@ fun VetFinderScreen(onNavigateBack: () -> Unit) {
                 }
             }
 
-            OutlinedButton(
-                onClick = onNavigateBack,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Text("Back")
-            }
         }
     }
 }

@@ -21,7 +21,7 @@ import uk.ac.tees.mad.e4552051.pawpal.ui.screens.splash.SplashScreen
 import uk.ac.tees.mad.e4552051.pawpal.ui.screens.home.HomeScreen
 import uk.ac.tees.mad.e4552051.pawpal.ui.screens.pets.AddPetScreen
 import uk.ac.tees.mad.e4552051.pawpal.ui.screens.pets.PetDetailScreen
-import uk.ac.tees.mad.e4552051.pawpal.ui.components.ReminderScreen
+import uk.ac.tees.mad.e4552051.pawpal.ui.screens.reminders.ReminderScreen
 import uk.ac.tees.mad.e4552051.pawpal.ui.screens.settings.SettingsScreen
 import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.PetViewModel
 import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.PetViewModelFactory

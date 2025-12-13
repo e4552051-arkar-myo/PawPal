@@ -71,7 +71,10 @@ fun ReminderDetailScreen(
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
-        topBar = { AppTopBar("Edit Reminder") },
+        topBar = { AppTopBar(
+            title = "Add Reminder",
+            onBack = onNavigateBack
+        ) },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
 

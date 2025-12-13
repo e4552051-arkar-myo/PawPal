@@ -1,4 +1,4 @@
-package uk.ac.tees.mad.e4552051.pawpal.ui.components
+package uk.ac.tees.mad.e4552051.pawpal.ui.screens.reminders
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,6 +8,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import uk.ac.tees.mad.e4552051.pawpal.data.local.entity.ReminderEntity
+import uk.ac.tees.mad.e4552051.pawpal.ui.components.AppTopBar
+import uk.ac.tees.mad.e4552051.pawpal.ui.components.ReminderItem
 import uk.ac.tees.mad.e4552051.pawpal.ui.viewmodel.ReminderViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -23,7 +25,10 @@ fun ReminderScreen(
     val sdf = SimpleDateFormat("dd MMM yyyy — HH:mm", Locale.getDefault())
 
     Scaffold(
-        topBar = { AppTopBar("Reminders") },
+        topBar = { AppTopBar(
+            title = "Reminders",
+            onBack = onNavigateBack
+        ) },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddReminder) {
                 Text("+")
@@ -60,14 +65,6 @@ fun ReminderScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedButton(
-                onClick = onNavigateBack,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Back")
-            }
         }
     }
 }

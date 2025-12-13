@@ -20,7 +20,10 @@ fun SettingsScreen(
     val cloudSyncEnabled by viewModel.cloudSync.collectAsState(initial = false)
 
     Scaffold(
-        topBar = { AppTopBar("Settings", onNavigateToSettings = null) }
+        topBar = { AppTopBar(
+            "Settings",
+            onNavigateToSettings = null,
+            onBack = onNavigateBack) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -78,14 +81,6 @@ fun SettingsScreen(
             Text("App Version: 1.0.0", style = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.weight(1f))
-
-            // Back Button
-            OutlinedButton(
-                onClick = onNavigateBack,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Back")
-            }
         }
     }
 }
