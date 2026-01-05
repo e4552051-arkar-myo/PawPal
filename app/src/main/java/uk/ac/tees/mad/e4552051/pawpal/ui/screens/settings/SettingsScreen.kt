@@ -64,20 +64,6 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Dark mode toggle
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Enable Dark Mode")
-                Switch(
-                    checked = darkModeEnabled,
-                    onCheckedChange = { viewModel.setDarkMode(it) }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
             Text("App Version: 1.0.0", style = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.weight(1f))

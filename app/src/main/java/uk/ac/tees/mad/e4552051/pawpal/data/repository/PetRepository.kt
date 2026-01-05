@@ -35,4 +35,9 @@ class PetRepository(
                 CloudSyncRepository.deletePet(pet.id)
             }
         }
+
+        suspend fun syncFromCloud() {
+            val cloudPets = CloudSyncRepository.pullPets()
+            petDao.upsertAll(cloudPets)
+        }
     }

@@ -18,4 +18,7 @@ interface ReminderDao {
 
     @Delete
     suspend fun deleteReminder(reminder: ReminderEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(reminders: List<ReminderEntity>)
 }

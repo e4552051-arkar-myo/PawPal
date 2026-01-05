@@ -29,4 +29,8 @@ class ReminderRepository(private val dao: ReminderDao) {
         }
 
     }
+    suspend fun syncFromCloud() {
+        val cloudReminders = CloudSyncRepository.pullReminders()
+        dao.upsertAll(cloudReminders)
+    }
 }

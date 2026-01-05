@@ -22,4 +22,7 @@ interface PetDao {
 
     @Query("SELECT * FROM pets WHERE id = :id LIMIT 1")
     fun getPetById(id: Int): Flow<PetEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(pets: List<PetEntity>)
 }
